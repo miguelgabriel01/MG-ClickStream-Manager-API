@@ -1,7 +1,8 @@
-// users/users.controller.ts
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { Request } from '@nestjs/common';
 
 @Controller('v1/users')
 export class UsersController {
@@ -12,5 +13,21 @@ export class UsersController {
   async create(@Body() createUserDto: CreateUserDto) {
     await this.usersService.create(createUserDto);
     return { message: 'User registered successfully' };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('status')
+  getStatus(@Request() req) {
+    return {
+      date: new Date().toLocaleDateString(),
+      time: new Date().toLocaleTimeString(),
+      location: this.getCurrentLocation(req),
+      status: 'API is running fine',
+    };
+  }
+
+  private getCurrentLocation(req): string {
+    // Simulação de localização. Pode ser substituída por uma função real.
+    return 'Latitude: X, Longitude: Y'; 
   }
 }
