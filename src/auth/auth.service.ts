@@ -1,4 +1,3 @@
-// auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -24,8 +23,7 @@ export class AuthService {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (passwordMatch) {
       console.log('Senha validada com sucesso');
-      console.log(user.password)
-      return { id: user.id, email: user.email };
+      return { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName };
     } else {
       console.log('Falha na validação da senha');
       throw new UnauthorizedException('Email ou senha invalidos');
@@ -37,6 +35,12 @@ export class AuthService {
     const payload = { email: user.email, sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
     };
   }
 }
