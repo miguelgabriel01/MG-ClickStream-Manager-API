@@ -1,3 +1,4 @@
+// auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -12,11 +13,23 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
+    console.log(`Validando usuário: ${email}`);
+    
     const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
-      return { id: user.id, email: user.email };
+    if (!user) {
+      console.log('Usuário não encontrado');
+      throw new UnauthorizedException('Email ou senha invalidos');
     }
-    throw new UnauthorizedException('Invalid email or password');
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (passwordMatch) {
+      console.log('Senha validada com sucesso');
+      console.log(user.password)
+      return { id: user.id, email: user.email };
+    } else {
+      console.log('Falha na validação da senha');
+      throw new UnauthorizedException('Email ou senha invalidos');
+    }
   }
 
   async login(loginDto: LoginDto) {

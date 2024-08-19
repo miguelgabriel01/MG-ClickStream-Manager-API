@@ -11,7 +11,7 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto) {
     await this.usersService.create(createUserDto);
-    return { message: 'User registered successfully' };
+    return { message: 'Usuário registrado com sucesso' };
   }
 
   @UseGuards(AuthGuard('jwt'))
