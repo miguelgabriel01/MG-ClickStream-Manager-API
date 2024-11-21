@@ -1,4 +1,3 @@
-// src/users/kafka.service.ts
 import { Injectable } from '@nestjs/common';
 import { Kafka, Admin, Consumer } from 'kafkajs';
 import { InjectModel } from '@nestjs/mongoose';
@@ -9,7 +8,6 @@ import { Topic } from './schemas/topic.schema';
 export class KafkaService {
   private kafka: Kafka;
   private admin: Admin;
-  private consumer: Consumer;
 
   constructor(
     @InjectModel(Topic.name) private readonly topicModel: Model<Topic>,
@@ -20,7 +18,6 @@ export class KafkaService {
     });
 
     this.admin = this.kafka.admin();
-    this.consumer = this.kafka.consumer({ groupId: 'your-group-id' });
   }
 
   async createTopic(userId: string, createTopicDto: any) {
@@ -59,20 +56,24 @@ export class KafkaService {
 
     // Obtendo mensagens do tópico do Kafka
     const messages = await this.getMessagesFromTopic(topic.topicName);
+
     return {
-      topic: topic.topicName,
-      messages,
+      topicName: topic.topicName,
+      totalPayloads: messages.length,
+      payloads: messages,
     };
   }
 
   private async getMessagesFromTopic(topic: string) {
     const messages = [];
-  
-    await this.consumer.connect();
+    const consumer = this.kafka.consumer({ groupId: `${topic}-temporary-group-${Date.now()}` });
+
+    await consumer.connect();
+
     try {
-      await this.consumer.subscribe({ topic, fromBeginning: true });
-  
-      await this.consumer.run({
+      await consumer.subscribe({ topic, fromBeginning: true });
+
+      await consumer.run({
         eachMessage: async ({ message }) => {
           messages.push({
             key: message.key?.toString(),
@@ -81,14 +82,18 @@ export class KafkaService {
         },
       });
 
-      // Espera um pouco para garantir que as mensagens foram consumidas
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return messages;
+      // Aguardar para garantir o consumo de todas as mensagens
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Fechar o consumidor após o consumo
+      await consumer.disconnect();
+
+      return messages.map((msg) => JSON.parse(msg.value)); // Converter para JSON se necessário
     } catch (error) {
-      console.error('Error getting messages from topic:', error);
+      console.error('Erro ao obter mensagens do tópico:', error);
       throw error;
     } finally {
-      await this.consumer.disconnect();
+      await consumer.disconnect();
     }
   }
 }
