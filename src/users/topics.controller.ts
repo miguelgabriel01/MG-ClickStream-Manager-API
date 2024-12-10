@@ -1,5 +1,4 @@
-// src/users/topics.controller.ts
-import { Controller, Post, Get, UseGuards, Request, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Delete, UseGuards, Request, Body, Param } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { KafkaService } from './kafka.service';
 import { CreateTopicDto } from './dto/create-topic.dto';
@@ -27,6 +26,13 @@ export class TopicsController {
   async getTopicById(@Request() req, @Param('idTopic') idTopic: string) {
     const userId = req.user['id'];
     const result = await this.kafkaService.getTopicById(userId, idTopic);
+    return result;
+  }
+
+  @Delete('deleteTopic/:idTopic')
+  async deleteTopic(@Request() req, @Param('idTopic') idTopic: string) {
+    const userId = req.user['id'];
+    const result = await this.kafkaService.deleteTopic(userId, idTopic);
     return result;
   }
 }
